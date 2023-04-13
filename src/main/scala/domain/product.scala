@@ -10,6 +10,7 @@ object product {
   final case class Product(id: ProductId, names: NonEmptySet[Translation])
 
   object Product {
+    def tupled = (Product.apply _).tupled
     implicit val decode: Decoder[Product] =
       Decoder.forProduct2("id", "names")(Product.apply)
 
