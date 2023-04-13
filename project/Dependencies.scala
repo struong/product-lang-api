@@ -15,15 +15,15 @@ object Dependencies {
     "org.tpolecat" %% "doobie-core",
     "org.tpolecat" %% "doobie-h2", // H2 driver 1.4.200 + type mappings.
     "org.tpolecat" %% "doobie-hikari", // HikariCP transactor.
-    "org.tpolecat" %% "doobie-postgres", // Postgres driver 42.3.1 + type mappings.
-
+    "org.tpolecat" %% "doobie-postgres" // Postgres driver 42.3.1 + type mappings.
   ).map(_ % doobieVersion)
 
   val circeVersion = "0.14.1"
   val circe: Seq[ModuleID] = Seq(
     "io.circe" %% "circe-core",
     "io.circe" %% "circe-generic",
-    "io.circe" %% "circe-parser"
+    "io.circe" %% "circe-parser",
+    "io.circe" %% "circe-refined"
   ).map(_ % circeVersion)
 
   val refinedVersion = "0.10.3"
@@ -33,13 +33,14 @@ object Dependencies {
   ).map(_ % refinedVersion)
 
   val slickVersion = "3.4.1"
-  val slick: Seq[ModuleID] = Seq("com.typesafe.slick" %% "slick").map(_ % slickVersion)
+  val slick: Seq[ModuleID] =
+    Seq("com.typesafe.slick" %% "slick").map(_ % slickVersion)
 
   val compile: Seq[ModuleID] = Seq(
     "org.typelevel" %% "cats-core" % "2.9.0",
     "com.github.pureconfig" %% "pureconfig" % "0.17.2",
     "org.flywaydb" % "flyway-core" % "9.16.0",
-    "org.postgresql" % "postgresql" % "42.5.4",
+    "org.postgresql" % "postgresql" % "42.5.4"
   ) ++ akka ++ doobie ++ circe ++ refined ++ slick
 
   val test: Seq[ModuleID] = Seq(
