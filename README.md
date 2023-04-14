@@ -9,7 +9,7 @@ If you would like to do the refactoring step then you can
 check out the tag `pure-start`
 
 ```
-git checkout tags/pure-start
+git checkout tags/pure-start -b <branch_name>
 ```
 
 ## Build
