@@ -11,7 +11,7 @@ import slick.jdbc.JdbcProfile
 import scala.concurrent.ExecutionContextExecutor
 import scala.util.{Failure, Success}
 
-object ImpureMain {
+object PureMain {
   def main(args: Array[String]): Unit = {
     def getConfig(path: String)(implicit system: ActorSystem[_]) =
       system.settings.config.getString(path)

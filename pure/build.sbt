@@ -8,7 +8,7 @@ ThisBuild / scalaVersion := "2.13.8"
 // sbt tasks, consider https://github.com/spray/sbt-revolver/
 fork := true
 
-lazy val root = (project in file("."))
+lazy val pure = (project in file("."))
   .settings(
     name := "product-lang-api",
     scalacOptions ++= Seq("-Ymacro-annotations"),
