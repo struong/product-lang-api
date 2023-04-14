@@ -15,17 +15,20 @@ git checkout tags/pure-start -b <branch_name>
 ## Build
 ### Impure Service
 ```
-cd impure
-sbt run
+sbt impure/run
 ```
 
 ### Pure Service
 ```
-cd pure
-sbt run
+sbt pure/run
 ```
 
 ### Usage
+
+Start PostgreSQL
+```
+docker-compose up -d
+```
 
 Create product
 ```
