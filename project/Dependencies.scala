@@ -34,19 +34,27 @@ object Dependencies {
 
   val slickVersion = "3.4.1"
   val slick: Seq[ModuleID] =
-    Seq("com.typesafe.slick" %% "slick").map(_ % slickVersion)
+    Seq(
+      "com.typesafe.slick" %% "slick",
+      "com.typesafe.slick" %% "slick-hikaricp"
+    ).map(_ % slickVersion)
+
+  val akkaHttpJsonVersion = "1.29.1"
+  val akkaHttpJson: Seq[ModuleID] = Seq(
+    "de.heikoseeberger" %% "akka-http-circe"
+  ).map(_ % akkaHttpJsonVersion)
 
   val compile: Seq[ModuleID] = Seq(
     "org.typelevel" %% "cats-core" % "2.9.0",
     "com.github.pureconfig" %% "pureconfig" % "0.17.2",
     "org.flywaydb" % "flyway-core" % "9.16.0",
-    "org.postgresql" % "postgresql" % "42.5.4"
-  ) ++ akka ++ doobie ++ circe ++ refined ++ slick
+    "org.postgresql" % "postgresql" % "42.5.4",
+    "ch.qos.logback" % "logback-classic" % "1.4.6"
+  ) ++ akka ++ doobie ++ circe ++ refined ++ slick ++ akkaHttpJson
 
   val test: Seq[ModuleID] = Seq(
     "eu.timepit" %% "refined-scalacheck" % "0.10.2" % Test,
     "org.mockito" %% "mockito-scala-scalatest" % "1.17.12" % Test,
-    "com.github.tomakehurst" % "wiremock-jre8" % "2.35.0" % "test, it",
     // generation of arbitrary case classes
     "com.chuusai" %% "shapeless" % "2.3.10" % Test,
     "com.github.alexarchambault" %% "scalacheck-shapeless_1.16" % "1.3.1" % Test,

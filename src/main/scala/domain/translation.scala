@@ -15,6 +15,16 @@ object translation {
   final case class Translation(lang: LanguageCode, name: ProductName)
 
   object Translation {
+    def unsafeApply(lang: String, name: String): Option[Translation] = {
+      val langE: Either[String, LanguageCode] = refineV(lang)
+      val nameE: Either[String, ProductName] = refineV(name)
+
+      for {
+        l <- langE.toOption
+        n <- nameE.toOption
+      } yield Translation(lang = l, name = n)
+    }
+
     // For NonEmptySet decoding
     implicit val order: Order[Translation] = new Order[Translation] {
       override def compare(x: Translation, y: Translation): Int =
