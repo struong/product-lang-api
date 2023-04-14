@@ -1,6 +1,6 @@
 import sbt._
 
-object Dependencies {
+object ImpureDependencies {
   val akkaVersion = "2.8.0"
   val akkaHttpVersion = "10.5.0"
   val akka: Seq[ModuleID] = Seq(
@@ -8,15 +8,6 @@ object Dependencies {
     "com.typesafe.akka" %% "akka-stream" % akkaVersion,
     "com.typesafe.akka" %% "akka-http" % akkaHttpVersion
   )
-
-  val doobieVersion = "1.0.0-RC1"
-  val doobie: Seq[ModuleID] = Seq(
-    // Start with this one
-    "org.tpolecat" %% "doobie-core",
-    "org.tpolecat" %% "doobie-h2", // H2 driver 1.4.200 + type mappings.
-    "org.tpolecat" %% "doobie-hikari", // HikariCP transactor.
-    "org.tpolecat" %% "doobie-postgres" // Postgres driver 42.3.1 + type mappings.
-  ).map(_ % doobieVersion)
 
   val circeVersion = "0.14.1"
   val circe: Seq[ModuleID] = Seq(
@@ -46,18 +37,16 @@ object Dependencies {
 
   val compile: Seq[ModuleID] = Seq(
     "org.typelevel" %% "cats-core" % "2.9.0",
-    "com.github.pureconfig" %% "pureconfig" % "0.17.2",
     "org.flywaydb" % "flyway-core" % "9.16.0",
     "org.postgresql" % "postgresql" % "42.5.4",
     "ch.qos.logback" % "logback-classic" % "1.4.6"
-  ) ++ akka ++ doobie ++ circe ++ refined ++ slick ++ akkaHttpJson
+  ) ++ akka ++ circe ++ refined ++ slick ++ akkaHttpJson
 
   val test: Seq[ModuleID] = Seq(
     "eu.timepit" %% "refined-scalacheck" % "0.10.2" % Test,
     "org.mockito" %% "mockito-scala-scalatest" % "1.17.12" % Test,
     // generation of arbitrary case classes
     "com.chuusai" %% "shapeless" % "2.3.10" % Test,
-    "com.github.alexarchambault" %% "scalacheck-shapeless_1.16" % "1.3.1" % Test,
-    "org.tpolecat" %% "doobie-scalatest" % doobieVersion % Test // ScalaTest support for typechecking statements.
+    "com.github.alexarchambault" %% "scalacheck-shapeless_1.16" % "1.3.1" % Test
   )
 }
