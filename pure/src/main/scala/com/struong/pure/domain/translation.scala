@@ -1,4 +1,4 @@
-package domain
+package com.struong.pure.domain
 
 import cats.Order
 import eu.timepit.refined._

@@ -1,4 +1,4 @@
-package domain
+package com.struong.pure.domain
 
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.string._

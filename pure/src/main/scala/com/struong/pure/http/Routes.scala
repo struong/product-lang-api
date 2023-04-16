@@ -1,11 +1,11 @@
-package http
+package com.struong.pure.http
 
 import cats.Applicative
 import cats.effect._
 import cats.implicits._
-import db.Repository
+import com.struong.pure.db.Repository
 import fs2.Stream
-import domain.product.Product
+import com.struong.pure.domain.product.Product
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl._

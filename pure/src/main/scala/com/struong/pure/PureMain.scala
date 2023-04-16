@@ -1,3 +1,5 @@
+package com.struong.pure
+
 import cats.effect._
 import cats.implicits._
 import com.comcast.ip4s.{Host, Port}
@@ -10,10 +12,8 @@ import eu.timepit.refined.pureconfig._
 import http.Routes.{ProductRoutes, ProductsRoutes}
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.implicits._
-import org.http4s.server.Router
 import pureconfig._
 import pureconfig.generic.auto._
-import com.typesafe.config._
 
 object PureMain extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {

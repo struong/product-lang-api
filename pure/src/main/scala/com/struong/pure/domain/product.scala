@@ -1,7 +1,7 @@
-package domain
+package com.struong.pure.domain
 
 import cats.data.NonEmptySet
-import domain.translation.{LanguageCode, ProductName, Translation}
+import com.struong.pure.domain.translation.{LanguageCode, ProductName, Translation}
 import eu.timepit.refined.auto._
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}

@@ -1,6 +1,6 @@
-package config
+package com.struong.pure.config
 
-import domain.database._
+import com.struong.pure.domain.database._
 import eu.timepit.refined.types.net.PortNumber
 import eu.timepit.refined.types.string.NonEmptyString
 

@@ -1,7 +1,7 @@
-package db
+package com.struong.pure.db
 
 import cats.effect.Sync
-import domain.database._
+import com.struong.pure.domain.database._
 import org.flywaydb.core.Flyway
 
 trait DatabaseMigrator[F[_]] {

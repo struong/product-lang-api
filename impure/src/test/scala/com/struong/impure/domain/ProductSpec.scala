@@ -1,6 +1,6 @@
 package com.struong.impure.domain
 
-import BaseSpec
+import com.struong.impure.BaseSpec
 
 class ProductSpec extends BaseSpec {
 

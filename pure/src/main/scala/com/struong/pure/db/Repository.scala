@@ -1,8 +1,8 @@
-package db
+package com.struong.pure.db
 
 import cats.effect.Sync
-import domain.product._
-import domain.translation._
+import com.struong.pure.domain.product._
+import com.struong.pure.domain.translation._
 import doobie._
 import doobie.implicits._
 import doobie.postgres.implicits._
