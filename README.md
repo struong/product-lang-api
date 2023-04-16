@@ -5,12 +5,8 @@ Converting from akka-http & slick (impure) to http4s & doobie (pure)
 From the Pure Functional HTTP APIs in Scala book:
 https://leanpub.com/pfhais/read
 
-If you would like to do the refactoring step then you can 
-check out the tag `pure-start`
-
-```
-git checkout tags/pure-start -b <branch_name>
-```
+If you would like to do the refactoring step then you can copy the impure folder to a new directory and refactor
+from there, using the `pure` folder as a reference
 
 ## Build
 ### Impure Service
