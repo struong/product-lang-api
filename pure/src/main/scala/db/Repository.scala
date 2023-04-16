@@ -1,70 +1,72 @@
 package db
 
-import cats.data.{NonEmptyList, NonEmptySet}
-import db.SlickTables.{namesTable, productsTable}
+import cats.effect.Sync
 import domain.product._
 import domain.translation._
-import slick.basic.DatabaseConfig
-import slick.jdbc.JdbcProfile
+import doobie._
+import doobie.implicits._
+import doobie.postgres.implicits._
+import doobie.refined.implicits._
 import eu.timepit.refined.auto._
-import slick.basic._
 
-import java.util.UUID
-import scala.concurrent.Future
+import fs2.Stream
 
-class Repository(dbConfig: DatabaseConfig[JdbcProfile]) {
-
-  import dbConfig.profile.api._
-
-  def loadProduct(id: ProductId): Future[Seq[(UUID, String, String)]] = {
-    val program = for {
-      (p, ns) <- productsTable
-        .filter(_.id === id)
-        .join(namesTable)
-        .on(_.id === _.productId)
-    } yield (p.id, ns.langCode, ns.name)
-
-    dbConfig.db.run(program.result)
-  }
-
-  // Streams all products back
-  def loadProducts(): DatabasePublisher[(UUID, String, String)] = {
-    val program = for {
-      (p, ns) <- productsTable
-        .join(namesTable)
-        .on(_.id === _.productId)
-        .sortBy(_._1.id)
-    } yield (p.id, ns.langCode, ns.name)
-
-    dbConfig.db.stream(program.result)
-  }
-
-  def saveProduct(p: Product): Future[List[Int]] = {
-    val productQuery = productsTable += (p.id)
-    val program = DBIO.sequence(
-      productQuery :: saveTranslations(p).toList
-    ).transactionally
-
-    dbConfig.db.run(program)
-  }
-
-  def updateProduct(p: Product): Future[List[Int]] = {
-    val program =
-      namesTable
-        .filter(_.productId === p.id)
-        .delete
-        .andThen(DBIO.sequence(saveTranslations(p).toList))
-        .transactionally
-
-    dbConfig.db.run(program)
-  }
-
-  private def saveTranslations(p: Product): NonEmptyList[DBIO[Int]] = {
-    p.names.toNonEmptyList.map(t => saveTranslation(p.id, t))
-  }
-
-  private def saveTranslation(id: ProductId, t: Translation): DBIO[Int] = {
-    namesTable.insertOrUpdate(id, t.lang, t.name)
-  }
+trait Repository[F[_]] {
+  def loadProduct(id: ProductId): F[Seq[(ProductId, LanguageCode, ProductName)]]
+  def loadProducts(): Stream[F, (ProductId, LanguageCode, ProductName)]
+  def saveProduct(p: Product): F[Int]
+  def updateProduct(p: Product): F[Int]
 }
 
+class DoobieRepository[F[_]: Sync](tx: Transactor[F]) extends Repository[F] {
+  override def loadProduct(
+      id: ProductId
+  ): F[Seq[(ProductId, LanguageCode, ProductName)]] =
+    sql"""SELECT products.id, names.lang_code, names.name
+         FROM products
+         JOIN names ON products.id = names.product_id
+         WHERE products.id = $id"""
+      .query[(ProductId, LanguageCode, ProductName)]
+      .to[Seq]
+      .transact(tx)
+
+  override def loadProducts()
+      : Stream[F, (ProductId, LanguageCode, ProductName)] =
+    sql"""SELECT products.id, names.lang_code, names.name
+         FROM products
+         JOIN names ON products.id = names.product_id
+         ORDER BY products.id"""
+      .query[(ProductId, LanguageCode, ProductName)]
+      .stream
+      .transact(tx)
+
+  override def saveProduct(p: Product): F[Int] = {
+    val namesSql =
+      "INSERT INTO names (product_id, lang_code, name) VALUES (?, ?, ?)"
+
+    val namesValues = p.names.toNonEmptyList.map(t => (p.id, t.lang, t.name))
+
+    val program = for {
+      pi <- sql"INSERT INTO products (id) VALUES(${p.id})".update.run
+      ni <- Update[(ProductId, LanguageCode, ProductName)](namesSql)
+        .updateMany(namesValues)
+    } yield pi + ni
+
+    program.transact(tx)
+  }
+
+  override def updateProduct(p: Product): F[Int] = {
+    val namesSql =
+      "INSERT INTO names (product_id, lang_code, name) VALUES (?, ?, ?)"
+
+    val namesValues = p.names.toNonEmptyList.map(t => (p.id, t.lang, t.name))
+
+    val program = for {
+      dl <- sql"DELETE FROM names WHERE product_id = ${p.id}".update.run
+      ts <- Update[(ProductId, LanguageCode, ProductName)](namesSql)
+        .updateMany(namesValues)
+    } yield dl + ts
+
+    program.transact(tx)
+  }
+}

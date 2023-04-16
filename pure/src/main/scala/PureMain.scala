@@ -1,82 +1,62 @@
-import akka.actor.typed.{ActorSystem, Behavior}
-import akka.actor.typed.scaladsl.Behaviors
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.server.Route
-import db.Repository
-import http.Routes
-import org.flywaydb.core.Flyway
-import slick.basic.DatabaseConfig
-import slick.jdbc.JdbcProfile
+import cats.effect._
+import cats.implicits._
+import com.comcast.ip4s.{Host, Port}
+import com.typesafe.config._
+import config.ServiceConf
+import db.{DatabaseMigrator, DoobieRepository, FlywayDatabaseMigrator}
+import doobie._
+import eu.timepit.refined.auto._
+import eu.timepit.refined.pureconfig._
+import http.Routes.{ProductRoutes, ProductsRoutes}
+import org.http4s.ember.server.EmberServerBuilder
+import org.http4s.implicits._
+import org.http4s.server.Router
+import pureconfig._
+import pureconfig.generic.auto._
+import com.typesafe.config._
 
-import scala.concurrent.ExecutionContextExecutor
-import scala.util.{Failure, Success}
+object PureMain extends IOApp {
+  override def run(args: List[String]): IO[ExitCode] = {
 
-object PureMain {
-  def main(args: Array[String]): Unit = {
-    def getConfig(path: String)(implicit system: ActorSystem[_]) =
-      system.settings.config.getString(path)
+    val migrator: DatabaseMigrator[IO] = new FlywayDatabaseMigrator
 
-    def startHttpServer(
-        routes: Route
-    )(implicit system: ActorSystem[_]): Unit = {
-      import system.executionContext
+    val serviceConf = ConfigSource.default.loadOrThrow[ServiceConf]
+    val databaseConf = serviceConf.database
+    val apiConf = serviceConf.api
 
-      val host = getConfig("api.host")
-      val port = getConfig("api.port").toInt
-
-      val futureBinding =
-        Http().newServerAt(host, port).bind(routes)
-
-      futureBinding.onComplete {
-        case Success(binding) =>
-          val address = binding.localAddress
-          system.log.info(
-            "Server online at http://{}:{}/",
-            address.getHostString,
-            address.getPort
-          )
-        case Failure(ex) =>
-          system.log.error(
-            "Failed to bind HTTP endpoint, terminating system",
-            ex
-          )
-          system.terminate()
-      }
-    }
-
-    def createRepository()(implicit system: ActorSystem[_]): Repository = {
-      val url = "jdbc:postgresql://" + getConfig(
-        "database.db.properties.serverName"
-      ) + ":" + getConfig(
-        "database.db.properties.portNumber"
-      ) + "/" + getConfig(
-        "database.db.properties.databaseName"
+    for {
+      migrate <- migrator.migrate(
+        databaseConf.url,
+        databaseConf.user,
+        databaseConf.pass
       )
+      tx = Transactor.fromDriverManager[IO](
+        databaseConf.driver,
+        databaseConf.url,
+        databaseConf.user,
+        databaseConf.pass
+      )
+      repo = new DoobieRepository(tx)
+      productsRoutes = new ProductsRoutes(repo)
+      productRoutes = new ProductRoutes(repo)
+      routes = productRoutes.routes <+> productsRoutes.routes
+      server <- EmberServerBuilder
+        .default[IO]
+        .withPort(
+          Port
+            .fromInt(apiConf.port.value)
+            .getOrElse(throw new RuntimeException("No port found"))
+        )
+        .withHost(
+          Host
+            .fromString(apiConf.host.value)
+            .getOrElse(throw new RuntimeException("No host found"))
+        )
+        .withHttpApp(routes.orNotFound)
+        .build
+        .use(_ => IO.never)
+        .as(ExitCode.Success)
+    } yield server
 
-      // Run flyway migration
-      val user = getConfig("database.db.properties.user")
-      val pass = getConfig("database.db.properties.password")
-      val flyway = Flyway.configure().dataSource(url, user, pass).load()
-      flyway.migrate()
-
-      val dbConfig: DatabaseConfig[JdbcProfile] =
-        DatabaseConfig.forConfig("database", system.settings.config)
-
-      new Repository(dbConfig)
-    }
-
-    val rootBehavior: Behavior[Nothing] = Behaviors.setup[Nothing] { context =>
-      implicit val ec: ExecutionContextExecutor = context.executionContext
-      implicit val system: ActorSystem[Nothing] = context.system
-
-      val repo = createRepository()
-
-      val routes = new Routes(repo)
-      startHttpServer(routes.allRoutes)
-
-      Behaviors.empty
-    }
-
-    ActorSystem[Nothing](rootBehavior, "ImpureHttpServer")
   }
 }

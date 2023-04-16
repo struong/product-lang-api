@@ -1,84 +1,83 @@
 package http
 
-import akka.NotUsed
-import akka.http.scaladsl.common.{
-  EntityStreamingSupport,
-  JsonEntityStreamingSupport
-}
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
-import akka.stream.scaladsl.Source
+import cats.Applicative
+import cats.effect._
 import cats.implicits._
 import db.Repository
-import de.heikoseeberger.akkahttpcirce.ErrorAccumulatingCirceSupport._
-import domain.product._
+import fs2.Stream
+import domain.product.Product
+import org.http4s._
+import org.http4s.circe._
+import org.http4s.dsl._
 
-import scala.concurrent.{ExecutionContext, Future}
+object Routes {
 
-class Routes(repo: Repository)(implicit ec: ExecutionContext) {
+  final class ProductRoutes[F[_]: Async: Applicative](repo: Repository[F])
+      extends Http4sDsl[F] {
+    implicit def decodeProduct: EntityDecoder[F, Product] = jsonOf
+    implicit def encodeProduct: EntityEncoder[F, Product] = jsonEncoderOf
 
-  private val productRoute: Route =
-    path(JavaUUID) { id =>
-      concat(
-        get {
-          complete {
-            for {
-              rows <- repo.loadProduct(id)
-              prod <- Future(Product.fromDatabase(rows))
-            } yield prod
+    val routes: HttpRoutes[F] = HttpRoutes.of[F] {
+      case GET -> Root / "product" / UUIDVar(id) =>
+        for {
+          load <- repo.loadProduct(id).attempt
+          resp <- load match {
+            case Left(error) => InternalServerError(error.getMessage)
+            case Right(rows) =>
+              Product.fromDatabase(rows).fold(NotFound())(Ok(_))
           }
-        },
-        put {
-          entity(as[Product]) { product =>
-            complete {
-              repo.updateProduct(product)
-            }
-          }
-        }
-      )
-    }
-
-  private val productsRoute: Route =
-    pathEndOrSingleSlash {
-      concat(
-        get {
-          implicit val jsonStreamingSupport: JsonEntityStreamingSupport =
-            EntityStreamingSupport.json()
-
-          val src = Source.fromPublisher(repo.loadProducts())
-
-          val products: Source[Product, NotUsed] = src
-            .collect { rows =>
-              Product.fromDatabase(Seq(rows)) match {
-                case Some(p) => p
+        } yield resp
+      case req @ PUT -> Root / "product" / UUIDVar(id) =>
+        for {
+          p <- req.as[Product]
+          update <- repo.updateProduct(p).attempt
+          res <- update match {
+            case Left(error) => InternalServerError(error.getMessage)
+            case Right(count) =>
+              count match {
+                case 0 => NotFound()
+                case _ => NoContent()
               }
-            }.groupBy(Int.MaxValue, _.id) // create a new stream per id
-            .fold(Option.empty[Product]) {
-              case (optProduct, product) => optProduct match {
-                case Some(p) =>
-                  // merge the list of translations
-                  p.copy(names = p.names ++ product.names).some
-                case None => product.some
-              }
-            }.mergeSubstreams
-            .collect {
-              case Some(p) => p
-            }
-
-          complete(products)
-        },
-        post {
-          entity(as[Product]) { product =>
-            complete {
-              repo.saveProduct(product)
-            }
           }
-        }
-      )
+        } yield res
     }
+  }
 
-  val allRoutes: Route = concat(
-    pathPrefix("product")(productRoute),
-    pathPrefix("products")(productsRoute)
-  )
+  final class ProductsRoutes[F[_]: Async](repo: Repository[F])
+      extends Http4sDsl[F] {
+    implicit def decodeProduct: EntityDecoder[F, Product] = jsonOf
+    implicit def encodeProduct: EntityEncoder[F, Product] = jsonEncoderOf
+
+    val routes: HttpRoutes[F] = HttpRoutes.of[F] {
+      case GET -> Root / "products" =>
+        val stream: Stream[F, Product] = repo
+          .loadProducts()
+          .attempt
+          .map {
+            case Left(error) =>
+              throw new RuntimeException(s"${error.getMessage}")
+            case Right(row) => row
+          }
+          .groupAdjacentBy(_._1)
+          .map { case (_, rows) =>
+            Product.fromDatabase(rows.toList)
+          }
+          .collect { case Some(p) => p }
+
+        Ok(stream)
+      case req @ POST -> Root / "products" =>
+        for {
+          p <- req.as[Product]
+          save <- repo.saveProduct(p).attempt
+          res <- save match {
+            case Left(error) => InternalServerError(error.getMessage)
+            case Right(count) =>
+              count match {
+                case 0 => InternalServerError()
+                case _ => NoContent()
+              }
+          }
+        } yield res
+    }
+  }
 }

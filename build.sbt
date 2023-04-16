@@ -9,12 +9,12 @@ lazy val impure = (project in file("impure"))
     fork := true,
     name := "impure-product-lang-api",
     scalacOptions ++= Seq("-Ymacro-annotations"),
-    libraryDependencies ++= Dependencies.compile ++ Dependencies.test
+    libraryDependencies ++= ImpureDependencies.compile ++ ImpureDependencies.test
   )
 
 lazy val pure = (project in file("pure"))
   .settings(
     name := "pure-product-lang-api",
     scalacOptions ++= Seq("-Ymacro-annotations"),
-    libraryDependencies ++= Dependencies.compile ++ Dependencies.test
+    libraryDependencies ++= PureDependencies.compile ++ PureDependencies.test
   )

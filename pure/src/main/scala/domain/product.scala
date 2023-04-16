@@ -1,11 +1,11 @@
 package domain
 
 import cats.data.NonEmptySet
-import domain.translation.Translation
+import domain.translation.{LanguageCode, ProductName, Translation}
 import eu.timepit.refined.auto._
+import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-
-import java.util.UUID
+import io.circe.refined._
 
 object product {
   type ProductId = java.util.UUID
@@ -15,32 +15,24 @@ object product {
   object Product {
     def tupled = (Product.apply _).tupled
 
-    implicit val decode: Decoder[Product] =
-      Decoder.forProduct2("id", "names")(Product.apply)
-
-    implicit val encode: Encoder[Product] =
-      Encoder.forProduct2("id", "names")(p => (p.id, p.names))
+    implicit val decode: Decoder[Product] = deriveDecoder
+    implicit val encode: Encoder[Product] = deriveEncoder
 
     //  Try to create a Product from the given list of database rows.
-    def fromDatabase(rows: Seq[(UUID, String, String)]): Option[Product] = {
+    def fromDatabase(rows: Seq[(ProductId, LanguageCode, ProductName)]): Option[Product] = {
       import translation._
-
-      Translation("ab", "b")
 
       val productOption =
         for {
           (id, lang, name) <- rows.headOption
-          t <- Translation.unsafeApply(lang, name)
         } yield {
-          Product(id = id, NonEmptySet.one(t))
+          Product(id = id, NonEmptySet.one(Translation(lang, name)))
         }
 
       productOption.map { product =>
         rows.drop(1).foldLeft(product) { case (a, cols) =>
           val (_, lang, productName) = cols
-          Translation
-            .unsafeApply(lang, productName)
-            .fold(a)(translation => a.copy(names = a.names.add(translation)))
+          a.copy(names = a.names.add(Translation(lang, productName)))
         }
       }
     }
