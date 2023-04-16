@@ -1,3 +1,5 @@
+package com.struong.impure
+
 import cats.data._
 import com.struong.impure.domain.product.{Product, ProductId}
 import com.struong.impure.domain.translation._

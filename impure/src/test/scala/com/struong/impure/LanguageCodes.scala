@@ -1,4 +1,6 @@
-import com.struong.impure.domain.translation.LanguageCode
+package com.struong.impure
+
+import translation.LanguageCode
 import eu.timepit.refined.auto._
 
 object LanguageCodes {

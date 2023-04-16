@@ -1,6 +1,4 @@
-package db
-
-import domain.product.Product
+package com.struong.impure.db
 
 import java.util.UUID
 

@@ -1,17 +1,14 @@
-package http
+package com.struong.impure.http
 
 import akka.NotUsed
-import akka.http.scaladsl.common.{
-  EntityStreamingSupport,
-  JsonEntityStreamingSupport
-}
+import akka.http.scaladsl.common.{EntityStreamingSupport, JsonEntityStreamingSupport}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.scaladsl.Source
 import cats.implicits._
-import db.Repository
+import com.struong.impure.db.Repository
+import com.struong.impure.domain.product.Product
 import de.heikoseeberger.akkahttpcirce.ErrorAccumulatingCirceSupport._
-import domain.product._
 
 import scala.concurrent.{ExecutionContext, Future}
 

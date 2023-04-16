@@ -1,13 +1,12 @@
-package db
+package com.struong.impure.db
 
-import cats.data.{NonEmptyList, NonEmptySet}
-import db.SlickTables.{namesTable, productsTable}
-import domain.product._
-import domain.translation._
-import slick.basic.DatabaseConfig
-import slick.jdbc.JdbcProfile
+import cats.data.NonEmptyList
+import com.struong.impure.db.SlickTables.{namesTable, productsTable}
+import com.struong.impure.domain.product._
+import com.struong.impure.domain.translation._
 import eu.timepit.refined.auto._
 import slick.basic._
+import slick.jdbc.JdbcProfile
 
 import java.util.UUID
 import scala.concurrent.Future
