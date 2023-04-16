@@ -43,10 +43,11 @@ object ImpureDependencies {
   ) ++ akka ++ circe ++ refined ++ slick ++ akkaHttpJson
 
   val test: Seq[ModuleID] = Seq(
-    "eu.timepit" %% "refined-scalacheck" % "0.10.2" % Test,
-    "org.mockito" %% "mockito-scala-scalatest" % "1.17.12" % Test,
-    // generation of arbitrary case classes
-    "com.chuusai" %% "shapeless" % "2.3.10" % Test,
-    "com.github.alexarchambault" %% "scalacheck-shapeless_1.16" % "1.3.1" % Test
-  )
+    "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion,
+    "com.typesafe.akka" %% "akka-testkit" % akkaVersion,
+    "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion,
+    "eu.timepit" %% "refined-scalacheck" % "0.10.2",
+    "org.scalatest" %% "scalatest" % "3.2.15",
+    "org.scalatestplus" %% "scalacheck-1-17" % "3.2.15.0"
+  ).map(_ % "test, it")
 }
