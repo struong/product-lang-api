@@ -44,7 +44,7 @@ object ImpureDependencies {
 
   val test: Seq[ModuleID] = Seq(
     "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion,
-    "com.typesafe.akka" %% "akka-testkit" % akkaVersion,
+    "com.typesafe.akka" %% "akka-actor-testkit-typed" % akkaVersion,
     "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion,
     "eu.timepit" %% "refined-scalacheck" % "0.10.2",
     "org.scalatest" %% "scalatest" % "3.2.15",
